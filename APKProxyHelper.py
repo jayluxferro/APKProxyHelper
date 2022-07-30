@@ -1,24 +1,16 @@
-#
-#
-#
-#
-#
-
 import subprocess
 import os
 import shutil
 from xml.etree import ElementTree
 
 class APKProxyHelper():
-    def __init__(self, apk_path, apktool_version):
-        self.apktool_version = apktool_version
+    def __init__(self, apk_path):
         self.apk = os.path.normpath(os.path.expanduser(apk_path))
         self.file_name = os.path.splitext(os.path.basename(self.apk))[0]
         self.apktool_output = self.apk.replace(".apk", "")
         self.patched_apk = self.apk.replace(self.file_name, "{}_proxy".format(self.file_name));
 
     # Public methods
-
     def patch_apk(self):
         if os.path.isfile(self.apk):
             self._decompile_apk()
@@ -27,16 +19,13 @@ class APKProxyHelper():
             self._repackage_apk()
             self._resign_apk()
             self._clean_up()
-        
-    # Private methods
-    
-    def _apktool_path(self):
-        if "2.5.1" in self.apktool_version:
-            return "apktool/apktool_2.5.0.jar"
-        elif "2.4.1" in self.apktool_version:
-            return "apktool/apktool_2.4.1.jar"
 
-        return None
+    # Private methods
+    def _apktool_path(self):
+        return "deps/apktool.jar"
+
+    def _apk_signer_path(self):
+        return "deps/apk-signer.jar"
 
     def _run_command(self, command):
         command_string = " ".join(command)
@@ -59,9 +48,9 @@ class APKProxyHelper():
 
     def _decompile_apk(self):
         print("[*] Decompiling {}".format(self.apk))
-        
+
         self._run_command(command=[
-            "java", 
+            "java",
             "-jar",
             self._apktool_path(),
             "-f",
@@ -94,14 +83,14 @@ class APKProxyHelper():
                 if root is not None:
                     application = root.find("application")
                     application.set("{http://schemas.android.com/apk/res/android}networkSecurityConfig", "@xml/network_security_config")
-                
+
                     with open(xml_path, "wb") as xml_file:
                         xml_file.write('<?xml version="1.0" encoding="utf-8" standalone="no"?>'.encode())
                         xml_file.write(ElementTree.tostring(root))
 
     def _repackage_apk(self):
         print("[*] Repackaging to {}".format(self.patched_apk))
-        
+
         self._run_command(command=[
             "java",
             "-jar", self._apktool_path(),
@@ -116,20 +105,17 @@ class APKProxyHelper():
             print("[*] Re-signing apk {}".format(self.patched_apk))
 
             self._run_command(command=[
-                "jarsigner",
-                "-verbose", 
-                "-keystore", "debug.keystore",
-                "-keypass", "android",
-                "-storepass", "android",
-                "-sigalg", "SHA1withRSA",
-                "-digestalg", "SHA1",
-                self.patched_apk,
-                "androiddebugkey"
+                "java",
+                "-jar",
+                self._apk_signer_path(),
+                "--allowResign",
+                "-a",
+                self.patched_apk
             ])
 
     def _clean_up(self):
         try:
-            print("[*] Cleaing up directory {}".format(self.apktool_output))
+            print("[*] Cleaning up directory {}".format(self.apktool_output))
             shutil.rmtree(self.apktool_output)
         except OSError as e:
             pass
