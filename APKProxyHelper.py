@@ -9,6 +9,7 @@ class APKProxyHelper():
         self.file_name = os.path.splitext(os.path.basename(self.apk))[0]
         self.apktool_output = self.apk.replace(".apk", "")
         self.patched_apk = self.apk.replace(self.file_name, "{}_proxy".format(self.file_name));
+        self.use_aapt2 = False
 
     # Public methods
     def patch_apk(self):
@@ -96,6 +97,22 @@ class APKProxyHelper():
             "-jar", self._apktool_path(),
             "-f",
             "b",
+            '"{}"'.format(self.apktool_output),
+            "-o", self.patched_apk
+        ])
+
+        if not os.path.isfile(self.patched_apk):
+            self._repackage_apk_aapt2()
+
+    def _repackage_apk_aapt2(self):
+        print("[*] Repackaging using aapt2 to {}".format(self.patched_apk))
+
+        self._run_command(command=[
+            "java",
+            "-jar", self._apktool_path(),
+            "-f",
+            "b",
+            "--use-aapt2",
             '"{}"'.format(self.apktool_output),
             "-o", self.patched_apk
         ])
