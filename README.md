@@ -1,8 +1,10 @@
 # APKProxyHelper
+
 APKProxyHelper paches an apk for proxying.
 
 Usage
 ----------
+
 ```
 $ python3 aph.py -h               
 usage: APKProxyHelper [-h] --apk APK
@@ -14,6 +16,7 @@ optional arguments:
 
 Output
 ----------
+
 ```
 $ python3 aph.py -a apk.apk
 [*] Decompiling apk.apk
@@ -26,3 +29,8 @@ $ python3 aph.py -a apk.apk
 .....
 [*] Cleaning up directory apk
 ```
+
+Useful Notes
+----------
+
+1. To fix `brut.androlib.AndrolibException: brut.common.BrutException`, delete existing resource table from `~/Library/apktool/framework/1.apk`, `~/.local/share/apktool/framework/1.apk`, `~\AppData\Local\apktool\framework\1.apk`

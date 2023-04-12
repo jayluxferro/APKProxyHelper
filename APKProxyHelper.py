@@ -1,7 +1,10 @@
-import subprocess
 import os
 import shutil
+import subprocess
+from pathlib import Path
+from platform import system as sys_name
 from xml.etree import ElementTree
+
 
 class APKProxyHelper():
     def __init__(self, apk_path):
@@ -14,6 +17,7 @@ class APKProxyHelper():
     # Public methods
     def patch_apk(self):
         if os.path.isfile(self.apk):
+            self._delete_existing_resource_table()
             self._decompile_apk()
             self._copy_network_file()
             self._update_manifest()
@@ -78,12 +82,13 @@ class APKProxyHelper():
         if os.path.isfile(xml_path):
             ElementTree.register_namespace("android", "http://schemas.android.com/apk/res/android")
 
-            tree = ElementTree.parse(xml_path) 
+            tree = ElementTree.parse(xml_path)
             if tree is not None:
                 root = tree.getroot()
                 if root is not None:
                     application = root.find("application")
-                    application.set("{http://schemas.android.com/apk/res/android}networkSecurityConfig", "@xml/network_security_config")
+                    application.set("{http://schemas.android.com/apk/res/android}networkSecurityConfig",
+                                    "@xml/network_security_config")
 
                     with open(xml_path, "wb") as xml_file:
                         xml_file.write('<?xml version="1.0" encoding="utf-8" standalone="no"?>'.encode())
@@ -129,6 +134,21 @@ class APKProxyHelper():
                 "-a",
                 self.patched_apk
             ])
+
+    def _delete_existing_resource_table(self):
+        os_name = sys_name().lower()
+        user_home_directory = Path.home()
+        apktool_resource_table_path = 'apktool/framework/1.apk'
+        try:
+            print('[*] Clearing existing resource table')
+            if os_name == 'darwin':
+                os.remove(f'{user_home_directory}/Library/{apktool_resource_table_path}')
+            if os.name == 'linux':
+                os.remove(f'{user_home_directory}/.local/share/{apktool_resource_table_path}')
+            if os.name == 'windows':
+                os.remove(f'{user_home_directory}/AppData/Local/{apktool_resource_table_path}')
+        except:
+            pass
 
     def _clean_up(self):
         try:
