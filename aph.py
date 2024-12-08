@@ -5,7 +5,9 @@ from APKProxyHelper import *
 
 def _handleArgs():
     argParser = argparse.ArgumentParser(prog="APKProxyHelper")
-    argParser.add_argument("--apk", "-a", help="The path to the apk file", required=True)
+    argParser.add_argument(
+        "--apk", "-a", help="The path to the apk file", required=True
+    )
     return argParser.parse_args()
 
 
